@@ -1,4 +1,6 @@
+
 // File: @openzeppelin/contracts/token/ERC20/IERC20.sol
+
 
 // OpenZeppelin Contracts (last updated v5.1.0) (token/ERC20/IERC20.sol)
 
@@ -20,11 +22,7 @@ interface IERC20 {
      * @dev Emitted when the allowance of a `spender` for an `owner` is set by
      * a call to {approve}. `value` is the new allowance.
      */
-    event Approval(
-        address indexed owner,
-        address indexed spender,
-        uint256 value
-    );
+    event Approval(address indexed owner, address indexed spender, uint256 value);
 
     /**
      * @dev Returns the value of tokens in existence.
@@ -52,10 +50,7 @@ interface IERC20 {
      *
      * This value changes when {approve} or {transferFrom} are called.
      */
-    function allowance(
-        address owner,
-        address spender
-    ) external view returns (uint256);
+    function allowance(address owner, address spender) external view returns (uint256);
 
     /**
      * @dev Sets a `value` amount of tokens as the allowance of `spender` over the
@@ -83,14 +78,11 @@ interface IERC20 {
      *
      * Emits a {Transfer} event.
      */
-    function transferFrom(
-        address from,
-        address to,
-        uint256 value
-    ) external returns (bool);
+    function transferFrom(address from, address to, uint256 value) external returns (bool);
 }
 
 // File: @openzeppelin/contracts/security/ReentrancyGuard.sol
+
 
 // OpenZeppelin Contracts (last updated v4.9.0) (security/ReentrancyGuard.sol)
 
@@ -171,7 +163,10 @@ abstract contract ReentrancyGuard {
 
 // File: Contratos_2025/Swap/Simple.sol
 
+
 pragma solidity ^0.8.20;
+
+
 
 /// @title SimpleSwap - Decentralized Exchange Contract
 /// @notice Allows adding/removing liquidity and swapping tokens
@@ -258,11 +253,7 @@ contract SimpleSwap is ReentrancyGuard {
         uint amountBMin,
         address to,
         uint deadline
-    )
-        external
-        nonReentrant
-        returns (uint amountA, uint amountB, uint liquidity)
-    {
+    ) external nonReentrant returns (uint amountA, uint amountB, uint liquidity) {
         require(block.timestamp <= deadline, "expired");
         require(tokenA != tokenB, "identical");
         require(amountADesired > 0 && amountBDesired > 0, "invalid_amt");
@@ -275,15 +266,11 @@ contract SimpleSwap is ReentrancyGuard {
         uint128 reserveB = pair.reserves.reserveB;
 
         amountA = amountADesired;
-        amountB = (reserveA == 0)
-            ? amountBDesired
-            : (amountADesired * reserveB) / reserveA;
+        amountB = (reserveA == 0) ? amountBDesired : (amountADesired * reserveB) / reserveA;
 
         require(amountA >= amountAMin && amountB >= amountBMin, "slippage");
 
-        liquidity = (reserveA == 0)
-            ? amountA
-            : (amountA * pair.totalSupply) / reserveA;
+        liquidity = (reserveA == 0) ? amountA : (amountA * pair.totalSupply) / reserveA;
 
         pair.reserves.reserveA += uint128(amountA);
         pair.reserves.reserveB += uint128(amountB);
@@ -334,14 +321,7 @@ contract SimpleSwap is ReentrancyGuard {
         IERC20(tokenA).transfer(to, amountA);
         IERC20(tokenB).transfer(to, amountB);
 
-        emit LiquidityRemoved(
-            tokenA,
-            tokenB,
-            msg.sender,
-            amountA,
-            amountB,
-            liquidity
-        );
+        emit LiquidityRemoved(tokenA, tokenB, msg.sender, amountA, amountB, liquidity);
     }
 
     /// @notice Swaps a fixed amount of tokens for another token
@@ -369,11 +349,7 @@ contract SimpleSwap is ReentrancyGuard {
 
         IERC20(tokenIn).transferFrom(msg.sender, address(this), amountIn);
 
-        uint amountOut = getAmountOut(
-            amountIn,
-            pair.reserves.reserveA,
-            pair.reserves.reserveB
-        );
+        uint amountOut = getAmountOut(amountIn, pair.reserves.reserveA, pair.reserves.reserveB);
         require(amountOut >= amountOutMin, "slippage");
 
         pair.reserves.reserveA += uint128(amountIn);
@@ -392,10 +368,7 @@ contract SimpleSwap is ReentrancyGuard {
     /// @param tokenA The base token
     /// @param tokenB The quote token
     /// @return price TokenA/TokenB price (scaled by 1e18)
-    function getPrice(
-        address tokenA,
-        address tokenB
-    ) external view returns (uint price) {
+    function getPrice(address tokenA, address tokenB) external view returns (uint price) {
         Reserves memory reserves = pairs[tokenA][tokenB].reserves;
         require(reserves.reserveA > 0 && reserves.reserveB > 0, "zero_resv");
         price = (uint(reserves.reserveA) * 1e18) / reserves.reserveB;
@@ -406,11 +379,7 @@ contract SimpleSwap is ReentrancyGuard {
     /// @param reserveIn Reserve of input token
     /// @param reserveOut Reserve of output token
     /// @return amountOut Output token amount
-    function getAmountOut(
-        uint amountIn,
-        uint reserveIn,
-        uint reserveOut
-    ) public pure returns (uint amountOut) {
+    function getAmountOut(uint amountIn, uint reserveIn, uint reserveOut) public pure returns (uint amountOut) {
         require(amountIn > 0, "zero_input");
         require(reserveIn > 0 && reserveOut > 0, "bad_resv");
 
