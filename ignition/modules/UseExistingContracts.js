@@ -12,7 +12,7 @@ module.exports = buildModule("UseExistingContracts", (m) => {
   );
   const simpleSwap = m.contractAt(
     "SimpleSwap",
-    "0x2fcB0a5C9Fa846A7A950Cdb191d9F3Fc03161FA8"
+    "0xCcD61fC22cd6328596Ba4CA1a7F1d6bF793BF997"
   );
 
   return { tokenA, tokenB, simpleSwap };

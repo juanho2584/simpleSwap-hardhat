@@ -25,8 +25,8 @@ Configuration is included to generate coverage reports with `yarn coverage`.
 - **TokenB:** `0x26a1E5E72fda2a3F000205B981627cE8aC6205CB`  
   [See in Etherscan](https://sepolia.etherscan.io/address/0x26a1E5E72fda2a3F000205B981627cE8aC6205CB#code)
 
-- **SimpleSwap:** `0x2fcB0a5C9Fa846A7A950Cdb191d9F3Fc03161FA8`  
-  [View on Etherscan](https://sepolia.etherscan.io/address/0x2fcB0a5C9Fa846A7A950Cdb191d9F3Fc03161FA8#code)
+- **SimpleSwap_v2:** `0xCcD61fC22cd6328596Ba4CA1a7F1d6bF793BF997`  
+  [View on Etherscan](https://sepolia.etherscan.io/address/0xCcD61fC22cd6328596Ba4CA1a7F1d6bF793BF997#code)
 
 ---
 

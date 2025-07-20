@@ -2,8 +2,8 @@
   "_format": "hh-sol-cache-2",
   "files": {
     "C:\\Users\\Usuario\\Desktop\\ETH KIPU - Comisión PM ¦ Ethereum Developer Pack ¦ ETH Kipu - Talento Tech ¦ 2025\\Tp Modulo 4\\simpleswap-dapp\\simpleSwap-hardhat\\contracts\\SimpleSwap.sol": {
-      "lastModificationDate": 1752862343870,
-      "contentHash": "ce96147058f3ca2c37752477beb2769a",
+      "lastModificationDate": 1752973328447,
+      "contentHash": "880c7b54b339f38a40156442c46662f5",
       "sourceName": "contracts/SimpleSwap.sol",
       "solcConfig": {
         "version": "0.8.28",
@@ -37,7 +37,7 @@
       "versionPragmas": [
         "^0.8.20",
         "^0.8.0",
-        "^0.8.20"
+        "^0.8.28"
       ],
       "artifacts": [
         "IERC20",

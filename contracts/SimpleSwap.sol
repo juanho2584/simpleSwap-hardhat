@@ -1,6 +1,8 @@
+/**
+ *Submitted for verification at Etherscan.io on 2025-07-20
+ */
 
 // File: @openzeppelin/contracts/token/ERC20/IERC20.sol
-
 
 // OpenZeppelin Contracts (last updated v5.1.0) (token/ERC20/IERC20.sol)
 
@@ -22,7 +24,11 @@ interface IERC20 {
      * @dev Emitted when the allowance of a `spender` for an `owner` is set by
      * a call to {approve}. `value` is the new allowance.
      */
-    event Approval(address indexed owner, address indexed spender, uint256 value);
+    event Approval(
+        address indexed owner,
+        address indexed spender,
+        uint256 value
+    );
 
     /**
      * @dev Returns the value of tokens in existence.
@@ -50,7 +56,10 @@ interface IERC20 {
      *
      * This value changes when {approve} or {transferFrom} are called.
      */
-    function allowance(address owner, address spender) external view returns (uint256);
+    function allowance(
+        address owner,
+        address spender
+    ) external view returns (uint256);
 
     /**
      * @dev Sets a `value` amount of tokens as the allowance of `spender` over the
@@ -78,11 +87,14 @@ interface IERC20 {
      *
      * Emits a {Transfer} event.
      */
-    function transferFrom(address from, address to, uint256 value) external returns (bool);
+    function transferFrom(
+        address from,
+        address to,
+        uint256 value
+    ) external returns (bool);
 }
 
 // File: @openzeppelin/contracts/security/ReentrancyGuard.sol
-
 
 // OpenZeppelin Contracts (last updated v4.9.0) (security/ReentrancyGuard.sol)
 
@@ -161,37 +173,54 @@ abstract contract ReentrancyGuard {
     }
 }
 
-// File: Contratos_2025/Swap/Simple.sol
+// File: Contratos_2025/Swap/SimpleSwap_v2.sol
 
+pragma solidity ^0.8.28;
 
-pragma solidity ^0.8.20;
-
-
-
-/// @title SimpleSwap - Decentralized Exchange Contract
-/// @notice Allows adding/removing liquidity and swapping tokens
+/**
+ * @title SimpleSwap - Decentralized Exchange Contract
+ * @notice A minimal implementation of a decentralized exchange supporting:
+ *         - Adding/removing liquidity
+ *         - Token swaps
+ * @dev Optimized version focusing on:
+ *      - Reducing multiple state variable accesses
+ *      - Gas efficiency
+ *      - Maintaining same functionality as original
+ */
 contract SimpleSwap is ReentrancyGuard {
+    /**
+     * @dev Struct to hold reserve amounts for a token pair
+     * @notice Uses uint128 to optimize storage (saves 1 slot vs uint256)
+     */
     struct Reserves {
         uint128 reserveA;
         uint128 reserveB;
     }
 
+    /**
+     * @dev Struct to manage liquidity pool data
+     * @param totalSupply Total LP tokens minted for the pool
+     * @param balance Mapping of LP token balances per address
+     * @param reserves Current reserves for the token pair
+     */
     struct LiquidityData {
         uint totalSupply;
         mapping(address => uint) balance;
         Reserves reserves;
     }
 
-    /// @dev Maps token pairs to their liquidity data
+    /// @dev Nested mapping to store liquidity data for all token pairs
     mapping(address => mapping(address => LiquidityData)) public pairs;
 
-    /// @notice Emitted when liquidity is added to a token pair
-    /// @param tokenA The first token of the pair
-    /// @param tokenB The second token of the pair
-    /// @param provider The address providing liquidity
-    /// @param amountA Amount of tokenA added
-    /// @param amountB Amount of tokenB added
-    /// @param liquidity Liquidity tokens minted
+    /**
+     * @notice Emitted when liquidity is added to a pool
+     * @param tokenA First token in the pair
+     * @param tokenB Second token in the pair
+     * @param provider Address providing liquidity
+     * @param amountA Amount of tokenA deposited
+     * @param amountB Amount of tokenB deposited
+     * @param liquidity LP tokens minted
+     */
     event LiquidityAdded(
         address indexed tokenA,
         address indexed tokenB,
@@ -201,13 +230,15 @@ contract SimpleSwap is ReentrancyGuard {
         uint liquidity
     );
 
-    /// @notice Emitted when liquidity is removed from a token pair
-    /// @param tokenA The first token of the pair
-    /// @param tokenB The second token of the pair
-    /// @param provider The address removing liquidity
-    /// @param amountA Amount of tokenA returned
-    /// @param amountB Amount of tokenB returned
-    /// @param liquidity Liquidity tokens burned
+    /**
+     * @notice Emitted when liquidity is removed from a pool
+     * @param tokenA First token in the pair
+     * @param tokenB Second token in the pair
+     * @param provider Address removing liquidity
+     * @param amountA Amount of tokenA withdrawn
+     * @param amountB Amount of tokenB withdrawn
+     * @param liquidity LP tokens burned
+     */
     event LiquidityRemoved(
         address indexed tokenA,
         address indexed tokenB,
@@ -217,12 +248,14 @@ contract SimpleSwap is ReentrancyGuard {
         uint liquidity
     );
 
-    /// @notice Emitted when a token swap is executed
-    /// @param tokenIn Token sent by the user
-    /// @param tokenOut Token received by the user
-    /// @param trader The address performing the swap
-    /// @param amountIn Input token amount
-    /// @param amountOut Output token amount
+    /**
+     * @notice Emitted when a token swap occurs
+     * @param tokenIn Token being sold
+     * @param tokenOut Token being bought
+     * @param trader Address executing the swap
+     * @param amountIn Amount of tokenIn sent
+     * @param amountOut Amount of tokenOut received
+     */
     event TokensSwapped(
         address indexed tokenIn,
         address indexed tokenOut,
@@ -231,19 +264,21 @@ contract SimpleSwap is ReentrancyGuard {
         uint amountOut
     );
 
-    /// @notice Adds liquidity to a token pair
-    /// @dev Transfers the desired amounts to the contract and mints liquidity
-    /// @param tokenA Address of token A
-    /// @param tokenB Address of token B
-    /// @param amountADesired Desired amount of token A
-    /// @param amountBDesired Desired amount of token B
-    /// @param amountAMin Minimum amount of token A accepted
-    /// @param amountBMin Minimum amount of token B accepted
-    /// @param to Address to receive liquidity tokens
-    /// @param deadline Timestamp after which the transaction is invalid
-    /// @return amountA Actual amount of token A added
-    /// @return amountB Actual amount of token B added
-    /// @return liquidity Liquidity tokens minted
+    /**
+     * @notice Adds liquidity to a token pair
+     * @dev Optimized by loading reserves into memory to minimize storage reads
+     * @param tokenA Address of first token
+     * @param tokenB Address of second token
+     * @param amountADesired Max amount of tokenA to deposit
+     * @param amountBDesired Max amount of tokenB to deposit
+     * @param amountAMin Minimum acceptable amount of tokenA
+     * @param amountBMin Minimum acceptable amount of tokenB
+     * @param to Recipient of LP tokens
+     * @param deadline Transaction expiry timestamp
+     * @return amountA Actual amount of tokenA deposited
+     * @return amountB Actual amount of tokenB deposited
+     * @return liquidity Amount of LP tokens minted
+     */
     function addLiquidity(
         address tokenA,
         address tokenB,
@@ -253,43 +288,55 @@ contract SimpleSwap is ReentrancyGuard {
         uint amountBMin,
         address to,
         uint deadline
-    ) external nonReentrant returns (uint amountA, uint amountB, uint liquidity) {
+    )
+        external
+        nonReentrant
+        returns (uint amountA, uint amountB, uint liquidity)
+    {
         require(block.timestamp <= deadline, "expired");
         require(tokenA != tokenB, "identical");
         require(amountADesired > 0 && amountBDesired > 0, "invalid_amt");
 
+        // Transfer tokens from sender
         IERC20(tokenA).transferFrom(msg.sender, address(this), amountADesired);
         IERC20(tokenB).transferFrom(msg.sender, address(this), amountBDesired);
 
         LiquidityData storage pair = pairs[tokenA][tokenB];
-        uint128 reserveA = pair.reserves.reserveA;
-        uint128 reserveB = pair.reserves.reserveB;
+        Reserves memory reserves = pair.reserves; // Cache reserves in memory
 
         amountA = amountADesired;
-        amountB = (reserveA == 0) ? amountBDesired : (amountADesired * reserveB) / reserveA;
+        amountB = (reserves.reserveA == 0)
+            ? amountBDesired
+            : (amountADesired * reserves.reserveB) / reserves.reserveA;
 
         require(amountA >= amountAMin && amountB >= amountBMin, "slippage");
 
-        liquidity = (reserveA == 0) ? amountA : (amountA * pair.totalSupply) / reserveA;
+        liquidity = (reserves.reserveA == 0)
+            ? amountA
+            : (amountA * pair.totalSupply) / reserves.reserveA;
 
-        pair.reserves.reserveA += uint128(amountA);
-        pair.reserves.reserveB += uint128(amountB);
+        // Update state (single writes)
+        pair.reserves.reserveA = reserves.reserveA + uint128(amountA);
+        pair.reserves.reserveB = reserves.reserveB + uint128(amountB);
         pair.totalSupply += liquidity;
         pair.balance[to] += liquidity;
 
         emit LiquidityAdded(tokenA, tokenB, to, amountA, amountB, liquidity);
     }
 
-    /// @notice Removes liquidity from a token pair
-    /// @param tokenA Address of token A
-    /// @param tokenB Address of token B
-    /// @param liquidity Amount of liquidity tokens to burn
-    /// @param amountAMin Minimum amount of token A expected
-    /// @param amountBMin Minimum amount of token B expected
-    /// @param to Address to receive withdrawn tokens
-    /// @param deadline Timestamp after which the transaction is invalid
-    /// @return amountA Actual amount of token A returned
-    /// @return amountB Actual amount of token B returned
+    /**
+     * @notice Removes liquidity from a token pair
+     * @dev Optimized by caching reserves and totalSupply in memory
+     * @param tokenA Address of first token
+     * @param tokenB Address of second token
+     * @param liquidity Amount of LP tokens to burn
+     * @param amountAMin Minimum acceptable amount of tokenA
+     * @param amountBMin Minimum acceptable amount of tokenB
+     * @param to Recipient of withdrawn tokens
+     * @param deadline Transaction expiry timestamp
+     * @return amountA Actual amount of tokenA withdrawn
+     * @return amountB Actual amount of tokenB withdrawn
+     */
     function removeLiquidity(
         address tokenA,
         address tokenB,
@@ -305,32 +352,45 @@ contract SimpleSwap is ReentrancyGuard {
         LiquidityData storage pair = pairs[tokenA][tokenB];
         require(pair.balance[msg.sender] >= liquidity, "insuff_bal");
 
-        uint128 reserveA = pair.reserves.reserveA;
-        uint128 reserveB = pair.reserves.reserveB;
+        // Cache state variables in memory
+        Reserves memory reserves = pair.reserves;
+        uint totalSupply = pair.totalSupply;
 
-        amountA = (liquidity * reserveA) / pair.totalSupply;
-        amountB = (liquidity * reserveB) / pair.totalSupply;
+        amountA = (liquidity * reserves.reserveA) / totalSupply;
+        amountB = (liquidity * reserves.reserveB) / totalSupply;
 
         require(amountA >= amountAMin && amountB >= amountBMin, "slippage");
 
-        pair.reserves.reserveA -= uint128(amountA);
-        pair.reserves.reserveB -= uint128(amountB);
-        pair.totalSupply -= liquidity;
+        // Update state (single writes)
+        pair.reserves.reserveA = reserves.reserveA - uint128(amountA);
+        pair.reserves.reserveB = reserves.reserveB - uint128(amountB);
+        pair.totalSupply = totalSupply - liquidity;
         pair.balance[msg.sender] -= liquidity;
 
+        // Transfer tokens to recipient
         IERC20(tokenA).transfer(to, amountA);
         IERC20(tokenB).transfer(to, amountB);
 
-        emit LiquidityRemoved(tokenA, tokenB, msg.sender, amountA, amountB, liquidity);
+        emit LiquidityRemoved(
+            tokenA,
+            tokenB,
+            msg.sender,
+            amountA,
+            amountB,
+            liquidity
+        );
     }
 
-    /// @notice Swaps a fixed amount of tokens for another token
-    /// @param amountIn Input amount of tokenIn
-    /// @param amountOutMin Minimum output amount of tokenOut
-    /// @param path Array with [tokenIn, tokenOut]
-    /// @param to Recipient of tokenOut
-    /// @param deadline Transaction deadline
-    /// @return amounts Array with [amountIn, amountOut]
+    /**
+     * @notice Swaps exact tokens for tokens along specified path
+     * @dev Optimized by caching reserves in memory
+     * @param amountIn Exact amount of input tokens to send
+     * @param amountOutMin Minimum amount of output tokens to receive
+     * @param path Array with [tokenIn, tokenOut]
+     * @param to Recipient of output tokens
+     * @param deadline Transaction expiry timestamp
+     * @return amounts Array with [amountIn, amountOut]
+     */
     function swapExactTokensForTokens(
         uint amountIn,
         uint amountOutMin,
@@ -346,14 +406,20 @@ contract SimpleSwap is ReentrancyGuard {
         address tokenOut = path[1];
 
         LiquidityData storage pair = pairs[tokenIn][tokenOut];
+        Reserves memory reserves = pair.reserves; // Cache reserves in memory
 
         IERC20(tokenIn).transferFrom(msg.sender, address(this), amountIn);
 
-        uint amountOut = getAmountOut(amountIn, pair.reserves.reserveA, pair.reserves.reserveB);
+        uint amountOut = getAmountOut(
+            amountIn,
+            reserves.reserveA,
+            reserves.reserveB
+        );
         require(amountOut >= amountOutMin, "slippage");
 
-        pair.reserves.reserveA += uint128(amountIn);
-        pair.reserves.reserveB -= uint128(amountOut);
+        // Update state (single writes)
+        pair.reserves.reserveA = reserves.reserveA + uint128(amountIn);
+        pair.reserves.reserveB = reserves.reserveB - uint128(amountOut);
 
         IERC20(tokenOut).transfer(to, amountOut);
 
@@ -364,22 +430,34 @@ contract SimpleSwap is ReentrancyGuard {
         emit TokensSwapped(tokenIn, tokenOut, msg.sender, amountIn, amountOut);
     }
 
-    /// @notice Returns the price of tokenA in terms of tokenB
-    /// @param tokenA The base token
-    /// @param tokenB The quote token
-    /// @return price TokenA/TokenB price (scaled by 1e18)
-    function getPrice(address tokenA, address tokenB) external view returns (uint price) {
+    /**
+     * @notice Returns the price of tokenA in terms of tokenB
+     * @param tokenA The base token
+     * @param tokenB The quote token
+     * @return price Price of tokenA in tokenB terms (scaled by 1e18)
+     */
+    function getPrice(
+        address tokenA,
+        address tokenB
+    ) external view returns (uint price) {
         Reserves memory reserves = pairs[tokenA][tokenB].reserves;
         require(reserves.reserveA > 0 && reserves.reserveB > 0, "zero_resv");
         price = (uint(reserves.reserveA) * 1e18) / reserves.reserveB;
     }
 
-    /// @notice Calculates output amount for a given input amount and reserves
-    /// @param amountIn Input token amount
-    /// @param reserveIn Reserve of input token
-    /// @param reserveOut Reserve of output token
-    /// @return amountOut Output token amount
-    function getAmountOut(uint amountIn, uint reserveIn, uint reserveOut) public pure returns (uint amountOut) {
+    /**
+     * @notice Calculates output amount for given input amount and reserves
+     * @dev Uses constant product formula: amountOut = (amountIn * reserveOut) / (reserveIn + amountIn)
+     * @param amountIn Input token amount
+     * @param reserveIn Reserve of input token
+     * @param reserveOut Reserve of output token
+     * @return amountOut Output token amount
+     */
+    function getAmountOut(
+        uint amountIn,
+        uint reserveIn,
+        uint reserveOut
+    ) public pure returns (uint amountOut) {
         require(amountIn > 0, "zero_input");
         require(reserveIn > 0 && reserveOut > 0, "bad_resv");
 
